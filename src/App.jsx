@@ -29,9 +29,17 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <Box sx={{ display: 'flex' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
           <Sidebar menuItems={menuItems} />
-          <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+          <Box 
+            component="main" 
+            sx={{ 
+              flexGrow: 1,
+              minHeight: '100vh',
+              backgroundColor: 'background.default',
+              marginTop: '0'
+            }}
+          >
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/settings" element={<Settings />} />

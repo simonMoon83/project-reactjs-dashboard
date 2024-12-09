@@ -1,12 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, CircularProgress } from '@mui/material';
+import { Box, Typography, CircularProgress, useTheme as useMuiTheme } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { useTheme } from '../context/ThemeContext';
 
 const WidgetContent = ({ widget }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { isDarkMode } = useTheme();
+  const muiTheme = useMuiTheme();
+
+  const chartColors = {
+    grid: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+    text: isDarkMode ? '#fff' : '#666',
+    bars: isDarkMode ? '#90caf9' : '#8884d8',
+    lines: isDarkMode ? '#90caf9' : '#8884d8',
+    pie: isDarkMode ? ['#90caf9', '#f48fb1', '#81c784', '#ffb74d'] : ['#8884d8', '#82ca9d', '#ffc658', '#ff8042'],
+  };
 
   const fetchData = async () => {
     try {
@@ -62,17 +73,28 @@ const WidgetContent = ({ widget }) => {
       margin: { top: 5, right: 30, left: 20, bottom: 5 },
     };
 
+    const commonCartesianProps = {
+      stroke: chartColors.text,
+      style: { fontSize: '12px' },
+    };
+
     switch (widget.chart_type) {
       case 'bar':
         return (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart {...chartProps}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill="#8884d8" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+              <XAxis {...commonCartesianProps} dataKey="name" />
+              <YAxis {...commonCartesianProps} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: isDarkMode ? '#424242' : '#fff',
+                  border: `1px solid ${chartColors.grid}`,
+                  color: chartColors.text 
+                }} 
+              />
+              <Legend wrapperStyle={{ color: chartColors.text }} />
+              <Bar dataKey="value" fill={chartColors.bars} />
             </BarChart>
           </ResponsiveContainer>
         );
@@ -81,12 +103,18 @@ const WidgetContent = ({ widget }) => {
         return (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart {...chartProps}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="value" stroke="#8884d8" />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+              <XAxis {...commonCartesianProps} dataKey="name" />
+              <YAxis {...commonCartesianProps} />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: isDarkMode ? '#424242' : '#fff',
+                  border: `1px solid ${chartColors.grid}`,
+                  color: chartColors.text 
+                }} 
+              />
+              <Legend wrapperStyle={{ color: chartColors.text }} />
+              <Line type="monotone" dataKey="value" stroke={chartColors.lines} />
             </LineChart>
           </ResponsiveContainer>
         );
@@ -102,11 +130,21 @@ const WidgetContent = ({ widget }) => {
                 cx="50%"
                 cy="50%"
                 outerRadius={100}
-                fill="#8884d8"
+                fill={chartColors.pie[0]}
                 label
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={chartColors.pie[index % chartColors.pie.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: isDarkMode ? '#424242' : '#fff',
+                  border: `1px solid ${chartColors.grid}`,
+                  color: chartColors.text 
+                }} 
               />
-              <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ color: chartColors.text }} />
             </PieChart>
           </ResponsiveContainer>
         );
@@ -123,11 +161,21 @@ const WidgetContent = ({ widget }) => {
                 cy="50%"
                 innerRadius={60}
                 outerRadius={100}
-                fill="#8884d8"
+                fill={chartColors.pie[0]}
                 label
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={chartColors.pie[index % chartColors.pie.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: isDarkMode ? '#424242' : '#fff',
+                  border: `1px solid ${chartColors.grid}`,
+                  color: chartColors.text 
+                }} 
               />
-              <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ color: chartColors.text }} />
             </PieChart>
           </ResponsiveContainer>
         );

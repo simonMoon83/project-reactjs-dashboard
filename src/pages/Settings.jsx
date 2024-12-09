@@ -22,6 +22,9 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useTheme } from '../context/ThemeContext';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
 
 const WIDGET_TYPES = [
   { value: 'chart', label: 'Chart' },
@@ -41,6 +44,7 @@ const CHART_TYPES = [
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE'];
 
 const Settings = () => {
+  const { isDarkMode, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [openApi, setOpenApi] = useState(false);
   const [editingWidget, setEditingWidget] = useState(null);
@@ -299,8 +303,25 @@ const Settings = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 4 }}>Settings</Typography>
+      <Typography variant="h4" gutterBottom>Settings</Typography>
       
+      {/* Theme Settings */}
+      <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>Theme Settings</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <LightModeIcon />
+          <Switch
+            checked={isDarkMode}
+            onChange={toggleTheme}
+            inputProps={{ 'aria-label': 'theme toggle' }}
+          />
+          <DarkModeIcon />
+          <Typography>
+            {isDarkMode ? 'Dark Mode' : 'Light Mode'}
+          </Typography>
+        </Box>
+      </Paper>
+
       {/* API Management Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h6" sx={{ mb: 2 }}>API Management</Typography>

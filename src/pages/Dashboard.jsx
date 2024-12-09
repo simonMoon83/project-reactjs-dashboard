@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
-import { Box, Paper, Typography, IconButton, Grid } from '@mui/material';
+import { Box, Paper, Typography, IconButton, Grid, useTheme as useMuiTheme } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GridLayout from 'react-grid-layout';
 import WidgetContent from '../components/WidgetContent';
+import { useTheme } from '../context/ThemeContext';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
 const Dashboard = () => {
   const [widgets, setWidgets] = useState([]);
   const [layout, setLayout] = useState([]);
+  const { isDarkMode } = useTheme();
+  const muiTheme = useMuiTheme();
 
   useEffect(() => {
     fetch('http://localhost:3001/api/widgets')
@@ -73,10 +76,10 @@ const Dashboard = () => {
       width: '100%',
       minHeight: '100vh',
       pt: 2,
-      backgroundColor: '#f8fafc'
+      backgroundColor: isDarkMode ? muiTheme.palette.background.default : '#f8fafc'
     }}>
       <Box sx={{ px: 3, mb: 3 }}>
-        <Typography variant="h4">Dashboard</Typography>
+        <Typography variant="h4" sx={{ color: isDarkMode ? 'text.primary' : 'inherit' }}>Dashboard</Typography>
       </Box>
       <Box sx={{ px: 3 }}>
         <GridLayout
@@ -98,30 +101,35 @@ const Dashboard = () => {
                 flexDirection: 'column',
                 overflow: 'hidden',
                 borderRadius: 2,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+                backgroundColor: isDarkMode ? muiTheme.palette.background.paper : '#fff',
+                boxShadow: isDarkMode 
+                  ? '0 1px 3px rgba(255,255,255,0.12)' 
+                  : '0 1px 3px rgba(0,0,0,0.12)'
               }}
             >
               <Box
                 className="widget-header"
                 sx={{
-                  p: 1.5,
-                  backgroundColor: 'primary.main',
-                  color: 'white',
-                  cursor: 'move',
+                  p: 2,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                  cursor: 'move'
                 }}
               >
-                <Typography variant="subtitle1">{widget.title}</Typography>
+                <Typography variant="h6" sx={{ color: isDarkMode ? 'text.primary' : 'inherit' }}>
+                  {widget.title}
+                </Typography>
                 <IconButton
-                  size="small"
-                  color="error"
                   onClick={() => handleRemoveWidget(widget.id)}
-                  title="Remove from dashboard"
-                  sx={{ position: 'absolute', top: 8, right: 8 }}
+                  size="small"
+                  sx={{ color: isDarkMode ? 'text.secondary' : 'inherit' }}
                 >
                   <DeleteIcon />
                 </IconButton>
               </Box>
-              <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+              <Box sx={{ flexGrow: 1, p: 2, overflow: 'auto' }}>
                 <WidgetContent widget={widget} />
               </Box>
             </Paper>

@@ -35,11 +35,12 @@ const Sidebar = ({ menuItems }) => {
       <List>
         {menuItems.map((item) => (
           <ListItem
-            button
             key={item.id}
+            component="div"
             onClick={() => navigate(item.path)}
             selected={location.pathname === item.path}
             sx={{
+              cursor: 'pointer',
               '&.Mui-selected': {
                 backgroundColor: 'primary.main',
                 color: 'white',

@@ -8,10 +8,10 @@ import Settings from './pages/Settings'
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#6366f1',
+      main: '#1976d2',
     },
-    background: {
-      default: '#f8fafc',
+    secondary: {
+      main: '#dc004e',
     },
   },
 })
@@ -28,15 +28,14 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Router>
+      <Router future={{ v7_startTransition: true }}>
         <Box sx={{ display: 'flex', minHeight: '100vh' }}>
           <Sidebar menuItems={menuItems} />
           <Box 
             component="main" 
             sx={{ 
               flexGrow: 1,
-              minHeight: '100vh',
-              backgroundColor: 'background.default',
+              padding: '20px',
               marginTop: '0'
             }}
           >

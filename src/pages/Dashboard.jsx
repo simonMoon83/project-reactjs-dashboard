@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Paper, Typography, IconButton, Grid } from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import GridLayout from 'react-grid-layout';
+import WidgetContent from '../components/WidgetContent';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -15,10 +17,10 @@ const Dashboard = () => {
         setWidgets(data);
         setLayout(data.map(widget => ({
           i: widget.id.toString(),
-          x: widget.position_x,
-          y: widget.position_y,
-          w: widget.width,
-          h: widget.height,
+          x: widget.position_x || 0,
+          y: widget.position_y || 0,
+          w: widget.width || 4,
+          h: widget.height || 4,
         })));
       });
   }, []);
@@ -27,7 +29,7 @@ const Dashboard = () => {
     setLayout(newLayout);
     newLayout.forEach(item => {
       const widgetId = parseInt(item.i);
-      fetch(`http://localhost:3001/api/widgets/${widgetId}`, {
+      fetch(`http://localhost:3001/api/widgets/${widgetId}/position`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -38,6 +40,32 @@ const Dashboard = () => {
         }),
       });
     });
+  };
+
+  const handleRemoveWidget = (widgetId) => {
+    if (window.confirm('Are you sure you want to remove this widget from the dashboard?')) {
+      fetch(`http://localhost:3001/api/widgets/${widgetId}/toggle`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ active: false }),
+      })
+        .then(res => {
+          if (!res.ok) {
+            throw new Error('Failed to toggle widget');
+          }
+          return res.json();
+        })
+        .then(() => {
+          setWidgets(prevWidgets => prevWidgets.filter(w => w.id !== widgetId));
+          setLayout(prevLayout => prevLayout.filter(item => item.i !== widgetId.toString()));
+        })
+        .catch(error => {
+          console.error('Error removing widget:', error);
+          alert('Failed to remove widget');
+        });
+    }
   };
 
   return (
@@ -56,7 +84,7 @@ const Dashboard = () => {
           layout={layout}
           cols={12}
           rowHeight={100}
-          width={window.innerWidth - 280} // Adjust width to account for sidebar
+          width={window.innerWidth - 280}
           onLayoutChange={onLayoutChange}
           draggableHandle=".widget-header"
           margin={[16, 16]}
@@ -83,9 +111,18 @@ const Dashboard = () => {
                 }}
               >
                 <Typography variant="subtitle1">{widget.title}</Typography>
+                <IconButton
+                  size="small"
+                  color="error"
+                  onClick={() => handleRemoveWidget(widget.id)}
+                  title="Remove from dashboard"
+                  sx={{ position: 'absolute', top: 8, right: 8 }}
+                >
+                  <DeleteIcon />
+                </IconButton>
               </Box>
-              <Box sx={{ p: 2, flexGrow: 1 }}>
-                <Typography>Widget Content</Typography>
+              <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+                <WidgetContent widget={widget} />
               </Box>
             </Paper>
           ))}

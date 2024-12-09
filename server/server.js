@@ -152,23 +152,41 @@ app.get('/api/widgets/:id/data', async (req, res) => {
 
 // Toggle widget activation
 app.patch('/api/widgets/:id/toggle', (req, res) => {
+  console.log('\n=== Widget Toggle Request ===');
   const { id } = req.params;
   const { active } = req.body;
   
+  console.log('Request params:', { id, active });
+  console.log('Request headers:', req.headers);
+  console.log('Request body:', req.body);
+  
   try {
     const newActiveValue = active ? 1 : 0;
+    console.log('Converting active status to:', newActiveValue);
     
     // First check if widget exists
     const widget = dbInstance.prepare('SELECT * FROM widgets WHERE id = ?').get(id);
+    console.log('Current widget state:', widget);
+    
     if (!widget) {
+      console.log('Widget not found in database');
       res.status(404).json({ error: 'Widget not found' });
       return;
     }
     
     // Update widget active status
+    console.log('Executing update query...');
     const result = dbInstance.prepare('UPDATE widgets SET active = ? WHERE id = ?').run(newActiveValue, id);
+    console.log('Update result:', result);
+    
+    if (result.changes === 0) {
+      console.log('No rows were updated');
+      res.status(500).json({ error: 'Failed to update widget' });
+      return;
+    }
     
     // Get updated widget with API info
+    console.log('Fetching updated widget data...');
     const updatedWidget = dbInstance.prepare(`
       SELECT 
         w.*,
@@ -181,17 +199,27 @@ app.patch('/api/widgets/:id/toggle', (req, res) => {
       WHERE w.id = ?
     `).get(id);
     
+    console.log('Updated widget data:', updatedWidget);
+    
+    if (!updatedWidget) {
+      console.log('Failed to fetch updated widget');
+      res.status(500).json({ error: 'Failed to fetch updated widget' });
+      return;
+    }
+    
     // Convert boolean and JSON fields
     updatedWidget.active = Boolean(updatedWidget.active);
     updatedWidget.api_headers = updatedWidget.api_headers ? JSON.parse(updatedWidget.api_headers) : {};
     updatedWidget.api_body = updatedWidget.api_body ? JSON.parse(updatedWidget.api_body) : null;
     
+    console.log('Sending success response');
     res.json({ 
       success: true, 
       widget: updatedWidget
     });
   } catch (error) {
-    console.error('Error toggling widget:', error);
+    console.error('Error in toggle endpoint:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ error: 'Database error: ' + error.message });
   }
 });

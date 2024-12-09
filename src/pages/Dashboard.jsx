@@ -45,29 +45,73 @@ const Dashboard = () => {
     });
   };
 
-  const handleRemoveWidget = (widgetId) => {
-    if (window.confirm('Are you sure you want to remove this widget from the dashboard?')) {
-      fetch(`http://localhost:3001/api/widgets/${widgetId}/toggle`, {
+  const handleRemoveWidget = async (widgetId) => {
+    try {
+      console.log('Attempting to remove widget:', widgetId);
+      
+      const confirmed = window.confirm('Are you sure you want to remove this widget from the dashboard?');
+      if (!confirmed) {
+        console.log('Widget removal cancelled by user');
+        return;
+      }
+
+      console.log('Sending request to toggle widget:', widgetId);
+      
+      // Log the request details
+      const requestBody = { active: false };
+      console.log('Request body:', requestBody);
+      
+      const response = await fetch(`http://localhost:3001/api/widgets/${widgetId}/toggle`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ active: false }),
-      })
-        .then(res => {
-          if (!res.ok) {
-            throw new Error('Failed to toggle widget');
-          }
-          return res.json();
-        })
-        .then(() => {
-          setWidgets(prevWidgets => prevWidgets.filter(w => w.id !== widgetId));
-          setLayout(prevLayout => prevLayout.filter(item => item.i !== widgetId.toString()));
-        })
-        .catch(error => {
-          console.error('Error removing widget:', error);
-          alert('Failed to remove widget');
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries([...response.headers]));
+      
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('Parsed response data:', data);
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', e);
+        throw new Error('Server response was not valid JSON');
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || `Server returned ${response.status}`);
+      }
+
+      if (data.success) {
+        console.log('Successfully removed widget, updating state...');
+        setWidgets(prevWidgets => {
+          console.log('Previous widgets:', prevWidgets);
+          const newWidgets = prevWidgets.filter(w => w.id !== widgetId);
+          console.log('New widgets:', newWidgets);
+          return newWidgets;
         });
+        
+        setLayout(prevLayout => {
+          console.log('Previous layout:', prevLayout);
+          const newLayout = prevLayout.filter(item => item.i !== widgetId.toString());
+          console.log('New layout:', newLayout);
+          return newLayout;
+        });
+        
+        console.log('State updates completed');
+      } else {
+        throw new Error('Server indicated failure');
+      }
+    } catch (error) {
+      console.error('Error in handleRemoveWidget:', error);
+      console.error('Error stack:', error.stack);
+      alert(`Failed to remove widget: ${error.message}`);
     }
   };
 
@@ -122,9 +166,26 @@ const Dashboard = () => {
                   {widget.title}
                 </Typography>
                 <IconButton
-                  onClick={() => handleRemoveWidget(widget.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Delete button clicked for widget:', widget.id);
+                    handleRemoveWidget(widget.id);
+                  }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
                   size="small"
-                  sx={{ color: isDarkMode ? 'text.secondary' : 'inherit' }}
+                  sx={{ 
+                    color: isDarkMode ? 'text.secondary' : 'inherit',
+                    '&:hover': {
+                      color: 'error.main',
+                      backgroundColor: 'rgba(211, 47, 47, 0.04)'
+                    },
+                    position: 'relative',
+                    zIndex: 1000
+                  }}
                 >
                   <DeleteIcon />
                 </IconButton>

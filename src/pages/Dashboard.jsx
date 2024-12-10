@@ -120,7 +120,7 @@ const Dashboard = () => {
       width: '100%',
       minHeight: '100vh',
       pt: 2,
-      backgroundColor: isDarkMode ? muiTheme.palette.background.default : '#f8fafc'
+      backgroundColor: isDarkMode ? muiTheme.palette.background.default : '#ffffff'
     }}>
       <Box sx={{ px: 3, mb: 3 }}>
         <Typography variant="h4" sx={{ color: isDarkMode ? 'text.primary' : 'inherit' }}>Dashboard</Typography>

@@ -135,6 +135,12 @@ const Dashboard = () => {
           onLayoutChange={onLayoutChange}
           draggableHandle=".widget-header"
           margin={[16, 16]}
+          resizeHandles={['s', 'w', 'e', 'n', 'sw', 'nw', 'se', 'ne']}
+          transformScale={1}
+          isResizable={true}
+          compactType={null}
+          preventCollision={true}
+          style={{ minHeight: '800px' }}
         >
           {widgets.map(widget => (
             <Paper
@@ -148,7 +154,72 @@ const Dashboard = () => {
                 backgroundColor: isDarkMode ? muiTheme.palette.background.paper : '#fff',
                 boxShadow: isDarkMode 
                   ? '0 1px 3px rgba(255,255,255,0.12)' 
-                  : '0 1px 3px rgba(0,0,0,0.12)'
+                  : '0 1px 3px rgba(0,0,0,0.12)',
+                '& .react-resizable-handle': {
+                  position: 'absolute',
+                  width: '20px',
+                  height: '20px',
+                  bottom: '0',
+                  right: '0',
+                  cursor: 'se-resize',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    right: '3px',
+                    bottom: '3px',
+                    width: '5px',
+                    height: '5px',
+                    borderRight: `2px solid ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}`,
+                    borderBottom: `2px solid ${isDarkMode ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)'}`,
+                  },
+                  '&:hover::after': {
+                    borderColor: muiTheme.palette.primary.main,
+                  },
+                },
+                '& .react-resizable-handle-n': {
+                  top: '0',
+                  left: '50%',
+                  marginLeft: '-10px',
+                  cursor: 'n-resize',
+                },
+                '& .react-resizable-handle-e': {
+                  right: '0',
+                  top: '50%',
+                  marginTop: '-10px',
+                  cursor: 'e-resize',
+                },
+                '& .react-resizable-handle-s': {
+                  bottom: '0',
+                  left: '50%',
+                  marginLeft: '-10px',
+                  cursor: 's-resize',
+                },
+                '& .react-resizable-handle-w': {
+                  left: '0',
+                  top: '50%',
+                  marginTop: '-10px',
+                  cursor: 'w-resize',
+                },
+                '& .react-resizable-handle-ne': {
+                  top: '0',
+                  right: '0',
+                  cursor: 'ne-resize',
+                },
+                '& .react-resizable-handle-nw': {
+                  top: '0',
+                  left: '0',
+                  cursor: 'nw-resize',
+                },
+                '& .react-resizable-handle-se': {
+                  bottom: '0',
+                  right: '0',
+                  cursor: 'se-resize',
+                },
+                '& .react-resizable-handle-sw': {
+                  bottom: '0',
+                  left: '0',
+                  cursor: 'sw-resize',
+                }
               }}
             >
               <Box

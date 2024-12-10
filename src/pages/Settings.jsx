@@ -15,9 +15,6 @@ import {
   Grid,
   Paper,
   Switch,
-  List,
-  ListItem,
-  ListItemText,
   IconButton,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
@@ -43,6 +40,8 @@ const CHART_TYPES = [
 
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE'];
 
+const API_TYPES = ['internal', 'external'];
+
 const Settings = () => {
   const { isDarkMode, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
@@ -63,8 +62,10 @@ const Settings = () => {
   const [newApi, setNewApi] = useState({
     name: '',
     description: '',
+    type: 'external',
     endpoint: '',
     method: 'GET',
+    query: '',
     headers: '',
     body: '',
   });
@@ -110,8 +111,10 @@ const Settings = () => {
       setNewApi({
         name: '',
         description: '',
+        type: 'external',
         endpoint: '',
         method: 'GET',
+        query: '',
         headers: '',
         body: '',
       });
@@ -125,66 +128,91 @@ const Settings = () => {
     setNewApi({
       name: '',
       description: '',
+      type: 'external',
       endpoint: '',
       method: 'GET',
+      query: '',
       headers: '',
       body: '',
     });
   };
 
-  const handleSaveApi = () => {
-    // Validate and parse JSON fields
-    let headers, body;
+  const handleSaveApi = async () => {
+    const apiData = editingApi ? { ...newApi } : newApi;
+    
     try {
-      headers = newApi.headers ? JSON.parse(newApi.headers) : {};
-      body = newApi.body ? JSON.parse(newApi.body) : null;
-    } catch (error) {
-      alert('Invalid JSON in headers or body');
-      return;
-    }
+      // Validate JSON fields for external APIs
+      if (apiData.type === 'external') {
+        if (apiData.headers) {
+          JSON.parse(apiData.headers);
+        }
+        if (apiData.body) {
+          JSON.parse(apiData.body);
+        }
+      }
 
-    const url = editingApi
-      ? `http://localhost:3001/api/apis/${editingApi.id}`
-      : 'http://localhost:3001/api/apis';
-
-    fetch(url, {
-      method: editingApi ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...newApi,
-        headers,
-        body,
-      }),
-    })
-      .then(res => res.json())
-      .then(() => {
-        handleCloseApi();
-        fetchApis();
-      })
-      .catch(error => {
-        console.error('Error saving API:', error);
-        alert('Failed to save API');
+      const response = await fetch(`http://localhost:3001/api/apis${editingApi ? `/${editingApi.id}` : ''}`, {
+        method: editingApi ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to save API');
+      }
+
+      fetchApis();
+      setOpenApi(false);
+      setEditingApi(null);
+      setNewApi({
+        name: '',
+        description: '',
+        type: 'external',
+        endpoint: '',
+        method: 'GET',
+        query: '',
+        headers: '',
+        body: '',
+      });
+    } catch (error) {
+      console.error('Error saving API:', error);
+      alert(error.message || 'Failed to save API');
+    }
   };
 
-  const handleDeleteApi = (apiId) => {
-    if (window.confirm('Are you sure you want to delete this API?')) {
-      fetch(`http://localhost:3001/api/apis/${apiId}`, {
+  const handleDeleteApi = async (api) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/apis/${api.id}`, {
         method: 'DELETE',
-      })
-        .then(res => res.json())
-        .then((data) => {
-          if (data.error) {
-            alert(data.error);
-          } else {
-            fetchApis();
-          }
-        })
-        .catch(error => {
-          console.error('Error deleting API:', error);
-          alert('Failed to delete API');
-        });
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete API');
+      }
+
+      fetchApis();
+    } catch (error) {
+      console.error('Error deleting API:', error);
+      alert('Failed to delete API');
     }
+  };
+
+  const handleEditApi = (api) => {
+    setEditingApi(api);
+    setNewApi({
+      name: api.name,
+      description: api.description || '',
+      type: api.type,
+      endpoint: api.endpoint,
+      method: api.method,
+      query: api.query || '',
+      headers: api.headers || '',
+      body: api.body || '',
+    });
+    setOpenApi(true);
   };
 
   const handleOpen = (widget = null) => {
@@ -345,7 +373,7 @@ const Settings = () => {
                       {api.description}
                     </Typography>
                     <Typography color="text.secondary">
-                      {api.method} {api.endpoint}
+                      {api.type === 'internal' ? 'Internal (DB Query)' : `${api.method} ${api.endpoint}`}
                     </Typography>
                   </Box>
                   <Box>
@@ -360,7 +388,7 @@ const Settings = () => {
                     <Button
                       variant="outlined"
                       color="error"
-                      onClick={() => handleDeleteApi(api.id)}
+                      onClick={() => handleDeleteApi(api)}
                     >
                       Delete
                     </Button>
@@ -424,83 +452,115 @@ const Settings = () => {
       </Box>
 
       {/* API Dialog */}
-      <Dialog open={openApi} onClose={handleCloseApi} maxWidth="md" fullWidth>
-        <DialogTitle>{editingApi ? 'Edit API' : 'Add New API'}</DialogTitle>
+      <Dialog open={openApi} onClose={() => setOpenApi(false)} maxWidth="md" fullWidth>
+        <DialogTitle>{editingApi ? 'Edit API' : 'Add API'}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
-                label="API Name"
                 fullWidth
+                label="Name"
                 value={newApi.name}
                 onChange={(e) => setNewApi({ ...newApi, name: e.target.value })}
               />
             </Grid>
-
             <Grid item xs={12}>
               <TextField
-                label="Description"
                 fullWidth
+                label="Description"
                 value={newApi.description}
                 onChange={(e) => setNewApi({ ...newApi, description: e.target.value })}
               />
             </Grid>
-
-            <Grid item xs={12} sm={8}>
-              <TextField
-                label="Endpoint"
-                fullWidth
-                value={newApi.endpoint}
-                onChange={(e) => setNewApi({ ...newApi, endpoint: e.target.value })}
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>HTTP Method</InputLabel>
+                <InputLabel>API Type</InputLabel>
                 <Select
-                  value={newApi.method}
-                  label="HTTP Method"
-                  onChange={(e) => setNewApi({ ...newApi, method: e.target.value })}
+                  value={newApi.type}
+                  label="API Type"
+                  onChange={(e) => setNewApi({ ...newApi, type: e.target.value })}
                 >
-                  {HTTP_METHODS.map((method) => (
-                    <MenuItem key={method} value={method}>
-                      {method}
+                  {API_TYPES.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type === 'internal' ? 'Internal (DB Query)' : 'External (HTTP Request)'}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
-
             <Grid item xs={12}>
               <TextField
-                label="Headers (JSON)"
                 fullWidth
-                multiline
-                rows={4}
-                value={newApi.headers}
-                onChange={(e) => setNewApi({ ...newApi, headers: e.target.value })}
-                helperText="Example: {'Authorization': 'Bearer token'}"
+                label={newApi.type === 'internal' ? 'Table/View Name' : 'Endpoint URL'}
+                value={newApi.endpoint}
+                onChange={(e) => setNewApi({ ...newApi, endpoint: e.target.value })}
+                helperText={
+                  newApi.type === 'internal'
+                    ? 'Enter the table or view name to query'
+                    : 'Enter the full URL for the external API'
+                }
               />
             </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                label="Body (JSON)"
-                fullWidth
-                multiline
-                rows={4}
-                value={newApi.body}
-                onChange={(e) => setNewApi({ ...newApi, body: e.target.value })}
-                helperText="Example: {'key': 'value'}"
-              />
-            </Grid>
+            {newApi.type === 'internal' ? (
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="SQL Query"
+                  multiline
+                  rows={4}
+                  value={newApi.query}
+                  onChange={(e) => setNewApi({ ...newApi, query: e.target.value })}
+                  helperText="Enter the SQL query to execute. Use column aliases if needed."
+                />
+              </Grid>
+            ) : (
+              <>
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <InputLabel>Method</InputLabel>
+                    <Select
+                      value={newApi.method}
+                      label="Method"
+                      onChange={(e) => setNewApi({ ...newApi, method: e.target.value })}
+                    >
+                      {HTTP_METHODS.map((method) => (
+                        <MenuItem key={method} value={method}>
+                          {method}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Headers (JSON)"
+                    multiline
+                    rows={4}
+                    value={newApi.headers}
+                    onChange={(e) => setNewApi({ ...newApi, headers: e.target.value })}
+                    helperText="Example: {'Authorization': 'Bearer token'}"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Body (JSON)"
+                    multiline
+                    rows={4}
+                    value={newApi.body}
+                    onChange={(e) => setNewApi({ ...newApi, body: e.target.value })}
+                    helperText="Request body for POST/PUT methods"
+                  />
+                </Grid>
+              </>
+            )}
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseApi}>Cancel</Button>
+          <Button onClick={() => setOpenApi(false)}>Cancel</Button>
           <Button onClick={handleSaveApi} variant="contained" color="primary">
-            {editingApi ? 'Save Changes' : 'Add API'}
+            Save
           </Button>
         </DialogActions>
       </Dialog>
@@ -573,7 +633,7 @@ const Settings = () => {
                   </MenuItem>
                   {apis.map((api) => (
                     <MenuItem key={api.id} value={api.id}>
-                      {api.name} ({api.method} {api.endpoint})
+                      {api.name} ({api.type === 'internal' ? 'Internal (DB Query)' : `${api.method} ${api.endpoint}`})
                     </MenuItem>
                   ))}
                 </Select>
